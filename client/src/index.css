@@ -36,17 +36,17 @@
   --charcoal-800: hsl(0, 0%, 18%);
   --charcoal-900: hsl(0, 0%, 10%);
   
-  /* Custom Matte Cyan colors */
-  --matte-cyan-50: hsl(180, 100%, 97%);
-  --matte-cyan-100: hsl(180, 75%, 94%);
-  --matte-cyan-200: hsl(180, 75%, 88%);
-  --matte-cyan-300: hsl(180, 75%, 81%);
-  --matte-cyan-400: hsl(180, 65%, 71%);
-  --matte-cyan-500: hsl(180, 42%, 35%);
-  --matte-cyan-600: hsl(180, 48%, 25%);
-  --matte-cyan-700: hsl(180, 50%, 19%);
-  --matte-cyan-800: hsl(180, 50%, 13%);
-  --matte-cyan-900: hsl(180, 60%, 6%);
+  /* Custom Matte Cyan colors - Based on #029fad */
+  --matte-cyan-50: hsl(185, 96%, 95%);
+  --matte-cyan-100: hsl(185, 96%, 88%);
+  --matte-cyan-200: hsl(185, 96%, 78%);
+  --matte-cyan-300: hsl(185, 96%, 68%);
+  --matte-cyan-400: hsl(185, 96%, 58%);
+  --matte-cyan-500: hsl(185, 96%, 35%);
+  --matte-cyan-600: hsl(185, 96%, 30%);
+  --matte-cyan-700: hsl(185, 96%, 25%);
+  --matte-cyan-800: hsl(185, 96%, 20%);
+  --matte-cyan-900: hsl(185, 96%, 15%);
 }
 
 .dark {
@@ -60,7 +60,7 @@
   --card-foreground: hsl(0, 0%, 98%);
   --border: hsl(0, 0%, 18%);
   --input: hsl(0, 0%, 18%);
-  --primary: hsl(180, 42%, 35%);
+  --primary: hsl(185, 96%, 35%);
   --primary-foreground: hsl(0, 0%, 98%);
   --secondary: hsl(0, 0%, 18%);
   --secondary-foreground: hsl(0, 0%, 98%);
