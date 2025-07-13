@@ -20,6 +20,12 @@ export interface IStorage {
     nsfwFound: number;
     processed: number;
   }>;
+  
+  organizeFiles(sessionId: number): Promise<{
+    moved: number;
+    renamed: number;
+    organized: ScanResult[];
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -59,14 +65,20 @@ export class MemStorage implements IStorage {
   async createScanSession(insertSession: InsertScanSession): Promise<ScanSession> {
     const id = this.currentSessionId++;
     const session: ScanSession = {
-      ...insertSession,
       id,
+      userId: insertSession.userId || null,
       startTime: new Date(),
       endTime: null,
       status: "active",
       totalFiles: 0,
       processedFiles: 0,
       nsfwFound: 0,
+      scanType: insertSession.scanType || "full",
+      targetFolders: insertSession.targetFolders || [],
+      fileTypes: insertSession.fileTypes || ["image", "video", "document"],
+      confidenceThreshold: insertSession.confidenceThreshold || 0.7,
+      autoActions: insertSession.autoActions || [],
+      customSettings: insertSession.customSettings || null,
     };
     this.scanSessions.set(id, session);
     return session;
@@ -92,8 +104,18 @@ export class MemStorage implements IStorage {
   async createScanResult(insertResult: InsertScanResult): Promise<ScanResult> {
     const id = this.currentResultId++;
     const result: ScanResult = {
-      ...insertResult,
       id,
+      sessionId: insertResult.sessionId,
+      filename: insertResult.filename,
+      filepath: insertResult.filepath,
+      fileType: insertResult.fileType,
+      isNsfw: insertResult.isNsfw || false,
+      confidence: insertResult.confidence || 0,
+      processed: insertResult.processed || false,
+      flagCategory: insertResult.flagCategory || null,
+      originalPath: insertResult.originalPath || null,
+      newPath: insertResult.newPath || null,
+      actionTaken: insertResult.actionTaken || "none",
       createdAt: new Date(),
     };
     this.scanResults.set(id, result);
@@ -131,6 +153,44 @@ export class MemStorage implements IStorage {
       totalFiles,
       nsfwFound,
       processed: totalFiles > 0 ? Math.round((processed / totalFiles) * 100) : 0,
+    };
+  }
+
+  async organizeFiles(sessionId: number): Promise<{ moved: number; renamed: number; organized: ScanResult[] }> {
+    const sessionResults = Array.from(this.scanResults.values()).filter(r => 
+      r.sessionId === sessionId && r.isNsfw && r.actionTaken === "none"
+    );
+    
+    const organized: ScanResult[] = [];
+    let moved = 0;
+    let renamed = 0;
+
+    for (const result of sessionResults) {
+      // Simulate file organization
+      const category = result.flagCategory || "flagged";
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const extension = result.filename.split('.').pop();
+      const newFilename = `${category}_${timestamp}_${result.id}.${extension}`;
+      const newPath = `/SecureScanner/${category}/${newFilename}`;
+      
+      const updatedResult = await this.updateScanResult(result.id, {
+        originalPath: result.filepath,
+        newPath: newPath,
+        filename: newFilename,
+        actionTaken: "moved"
+      });
+      
+      if (updatedResult) {
+        organized.push(updatedResult);
+        moved++;
+        renamed++;
+      }
+    }
+
+    return {
+      moved,
+      renamed,
+      organized
     };
   }
 }

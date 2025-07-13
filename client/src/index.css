@@ -24,17 +24,17 @@
   --ring: hsl(20, 14.3%, 4.1%);
   --radius: 0.5rem;
   
-  /* Custom Charcoal Gray colors */
-  --charcoal-50: hsl(0, 0%, 97%);
-  --charcoal-100: hsl(0, 0%, 90%);
-  --charcoal-200: hsl(0, 0%, 82%);
-  --charcoal-300: hsl(0, 0%, 69%);
-  --charcoal-400: hsl(0, 0%, 62%);
-  --charcoal-500: hsl(0, 0%, 49%);
-  --charcoal-600: hsl(0, 0%, 38%);
-  --charcoal-700: hsl(0, 0%, 32%);
-  --charcoal-800: hsl(0, 0%, 18%);
-  --charcoal-900: hsl(0, 0%, 10%);
+  /* Custom Charcoal Gray colors - Optimized for contrast with cyan */
+  --charcoal-50: hsl(210, 8%, 97%);
+  --charcoal-100: hsl(210, 8%, 90%);
+  --charcoal-200: hsl(210, 8%, 80%);
+  --charcoal-300: hsl(210, 8%, 65%);
+  --charcoal-400: hsl(210, 8%, 55%);
+  --charcoal-500: hsl(210, 8%, 45%);
+  --charcoal-600: hsl(210, 8%, 35%);
+  --charcoal-700: hsl(210, 8%, 25%);
+  --charcoal-800: hsl(210, 8%, 15%);
+  --charcoal-900: hsl(210, 8%, 8%);
   
   /* Custom Matte Cyan colors - Based on #029fad */
   --matte-cyan-50: hsl(185, 96%, 95%);
@@ -50,25 +50,25 @@
 }
 
 .dark {
-  --background: hsl(0, 0%, 10%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(0, 0%, 18%);
-  --muted-foreground: hsl(0, 0%, 65%);
-  --popover: hsl(0, 0%, 10%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(0, 0%, 10%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(0, 0%, 18%);
-  --input: hsl(0, 0%, 18%);
+  --background: hsl(210, 8%, 8%);
+  --foreground: hsl(210, 8%, 98%);
+  --muted: hsl(210, 8%, 15%);
+  --muted-foreground: hsl(210, 8%, 65%);
+  --popover: hsl(210, 8%, 8%);
+  --popover-foreground: hsl(210, 8%, 98%);
+  --card: hsl(210, 8%, 8%);
+  --card-foreground: hsl(210, 8%, 98%);
+  --border: hsl(210, 8%, 15%);
+  --input: hsl(210, 8%, 15%);
   --primary: hsl(185, 96%, 35%);
-  --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(0, 0%, 18%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(0, 0%, 18%);
-  --accent-foreground: hsl(0, 0%, 98%);
+  --primary-foreground: hsl(210, 8%, 98%);
+  --secondary: hsl(210, 8%, 15%);
+  --secondary-foreground: hsl(210, 8%, 98%);
+  --accent: hsl(210, 8%, 15%);
+  --accent-foreground: hsl(210, 8%, 98%);
   --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(0, 0%, 84%);
+  --destructive-foreground: hsl(210, 8%, 98%);
+  --ring: hsl(210, 8%, 84%);
   --radius: 0.5rem;
 }
 
@@ -83,7 +83,7 @@
 
   body {
     @apply font-sans antialiased bg-charcoal-900 text-gray-100;
-    background: linear-gradient(135deg, var(--charcoal-900) 0%, var(--charcoal-800) 50%, var(--charcoal-900) 100%);
+    background: linear-gradient(135deg, var(--charcoal-900) 0%, var(--charcoal-800) 30%, var(--charcoal-900) 100%);
     min-height: 100vh;
   }
 }

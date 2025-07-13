@@ -9,6 +9,8 @@ import Home from "@/pages/home";
 import Files from "@/pages/files";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import ScanConfig from "@/pages/scan-config";
+import ScanLanding from "@/pages/scan-landing";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import Header from "@/components/layout/header";
@@ -23,6 +25,10 @@ function Router() {
           <Route path="/files" component={Files} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
+          <Route path="/scan-config" component={ScanConfig} />
+          <Route path="/scan/:sessionId">
+            {(params) => <ScanLanding sessionId={params.sessionId} />}
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </main>
