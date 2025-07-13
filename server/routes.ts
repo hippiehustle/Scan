@@ -69,9 +69,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process files
       const results = [];
+      const flagCategories = ["explicit", "suggestive", "adult", "violent", "disturbing"];
+      
       for (const file of files) {
         const confidence = Math.random(); // Simulate NSFW detection
         const isNsfw = confidence > 0.7;
+        const flagCategory = isNsfw ? flagCategories[Math.floor(Math.random() * flagCategories.length)] : null;
         
         const result = await storage.createScanResult({
           sessionId: session.id,
@@ -82,6 +85,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isNsfw,
           confidence,
           processed: true,
+          flagCategory,
+          originalPath: `/uploads/${file.originalname}`,
+          newPath: null,
+          actionTaken: "none",
         });
         
         results.push(result);
@@ -133,6 +140,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // File Organization
+  app.post("/api/organize-files/:sessionId", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const result = await storage.organizeFiles(sessionId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to organize files" });
+    }
+  });
+
   // Export functionality
   app.get("/api/export/report", async (req, res) => {
     try {
@@ -146,8 +164,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         findings: nsfwResults.map(result => ({
           filename: result.filename,
           filepath: result.filepath,
+          original_path: result.originalPath,
+          new_path: result.newPath,
           type: result.fileType,
+          flag_category: result.flagCategory,
           confidence: Math.round(result.confidence * 100),
+          action_taken: result.actionTaken,
           detected_at: result.createdAt,
         })),
       };

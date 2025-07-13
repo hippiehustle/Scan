@@ -17,6 +17,12 @@ export const scanSessions = pgTable("scan_sessions", {
   totalFiles: integer("total_files").default(0),
   processedFiles: integer("processed_files").default(0),
   nsfwFound: integer("nsfw_found").default(0),
+  scanType: text("scan_type").notNull().default("full"), // 'full', 'quick', 'custom', 'scheduled'
+  targetFolders: text("target_folders").array().default([]),
+  fileTypes: text("file_types").array().default(["image", "video", "document"]),
+  confidenceThreshold: real("confidence_threshold").default(0.7),
+  autoActions: text("auto_actions").array().default([]), // 'move', 'rename', 'backup', 'delete'
+  customSettings: text("custom_settings"), // JSON string for additional settings
 });
 
 export const scanResults = pgTable("scan_results", {
@@ -28,6 +34,10 @@ export const scanResults = pgTable("scan_results", {
   isNsfw: boolean("is_nsfw").notNull().default(false),
   confidence: real("confidence").notNull().default(0),
   processed: boolean("processed").notNull().default(false),
+  flagCategory: text("flag_category"), // 'explicit', 'suggestive', 'adult', 'violent', 'disturbing'
+  originalPath: text("original_path"),
+  newPath: text("new_path"),
+  actionTaken: text("action_taken"), // 'none', 'moved', 'renamed', 'backed_up', 'deleted'
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

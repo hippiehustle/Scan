@@ -7,6 +7,7 @@ SecureScanner is a full-stack web application designed for detecting and managin
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Color scheme preference: Charcoal gray background with darker matte cyan (#029fad) accents.
 
 ## System Architecture
 
@@ -110,6 +111,34 @@ The application uses three main entities:
 3. **Database**: Drizzle migrations applied via `db:push` command
 4. **Environment**: Requires `DATABASE_URL` environment variable
 
+### Recent Major Enhancements (January 2025)
+
+**Enhanced Color System**: Implemented optimized charcoal gray and matte cyan (#029fad) color scheme with mathematically pleasing contrast ratios for improved visual accessibility and user preference alignment.
+
+**Comprehensive Scan Customization**: Added extensive scan configuration system allowing users to customize:
+- Target folders and file types
+- Detection confidence thresholds  
+- Automatic actions (move, rename, backup, quarantine)
+- Scheduled and custom scan types
+
+**Advanced File Organization**: Implemented intelligent file categorization and organization system that:
+- Categorizes flagged content by type (explicit, suggestive, adult, violent, disturbing)
+- Automatically renames files with timestamps and categories
+- Moves files to organized folder structures (/SecureScanner/[category]/)
+- Tracks original and new file paths
+
+**App Personalization**: Added comprehensive customization options including:
+- Theme color selection
+- Interface preferences (sounds, animations, compact mode)
+- Custom CSS support for advanced users
+- Auto-refresh and notification settings
+
+**Dedicated Scan Interface**: Created separate scan landing page with:
+- Real-time progress tracking
+- Scan control buttons (pause, resume, stop)
+- Live flagged content preview
+- One-click file organization functionality
+
 ### Key Design Decisions
 
 **Database Choice**: PostgreSQL with Drizzle ORM chosen for type safety and scalability over simpler solutions. Drizzle provides excellent TypeScript integration and migration management.
@@ -122,4 +151,6 @@ The application uses three main entities:
 
 **Authentication**: Basic user system implemented but not fully integrated, allowing for future expansion of multi-user capabilities.
 
-The architecture prioritizes developer experience, type safety, and mobile usability while maintaining flexibility for future security feature additions.
+**Color Psychology**: Charcoal gray provides professional, non-distracting background while matte cyan offers sufficient contrast (WCAG AA compliant) without being harsh on the eyes during extended use.
+
+The architecture prioritizes developer experience, type safety, mobile usability, and comprehensive customization while maintaining flexibility for future security feature additions.
