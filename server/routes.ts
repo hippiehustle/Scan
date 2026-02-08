@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertScanSessionSchema, insertScanResultSchema } from "@shared/schema";
 import multer from "multer";
+import { classifyImage, isImageFile, loadModel, getUnsupportedResult } from "./nsfw-model";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -56,7 +57,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File Upload and Analysis
+  loadModel().catch((err) =>
+    console.warn("NSFW model pre-load deferred:", err.message)
+  );
+
   app.post("/api/upload", upload.array("files"), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -64,47 +68,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No files uploaded" });
       }
 
-      // Create a new scan session
       const session = await storage.createScanSession({ userId: null });
-      
-      // Process files
+
       const results = [];
-      const flagCategories = ["explicit", "suggestive", "adult", "violent", "disturbing"];
-      
+      let processedCount = 0;
+
       for (const file of files) {
-        const confidence = Math.random(); // Simulate NSFW detection
-        const isNsfw = confidence > 0.7;
-        const flagCategory = isNsfw ? flagCategories[Math.floor(Math.random() * flagCategories.length)] : null;
-        
+        const fileType = file.mimetype.startsWith("image/")
+          ? "image"
+          : file.mimetype.startsWith("video/")
+            ? "video"
+            : "document";
+
+        let prediction;
+        if (isImageFile(file.mimetype)) {
+          try {
+            prediction = await classifyImage(
+              file.buffer,
+              session.confidenceThreshold ?? 0.7
+            );
+          } catch (classifyError) {
+            console.error(
+              `Failed to classify ${file.originalname}:`,
+              classifyError
+            );
+            prediction = getUnsupportedResult();
+          }
+        } else {
+          prediction = getUnsupportedResult();
+        }
+
         const result = await storage.createScanResult({
           sessionId: session.id,
           filename: file.originalname,
           filepath: `/uploads/${file.originalname}`,
-          fileType: file.mimetype.startsWith('image/') ? 'image' : 
-                   file.mimetype.startsWith('video/') ? 'video' : 'document',
-          isNsfw,
-          confidence,
-          processed: true,
-          flagCategory,
+          fileType,
+          isNsfw: prediction.isNsfw,
+          confidence: prediction.confidence,
+          processed: prediction.supported,
+          flagCategory: prediction.flagCategory,
           originalPath: `/uploads/${file.originalname}`,
           newPath: null,
           actionTaken: "none",
         });
-        
+
         results.push(result);
+        processedCount++;
       }
 
-      // Update session statistics
       await storage.updateScanSession(session.id, {
         totalFiles: files.length,
-        processedFiles: files.length,
-        nsfwFound: results.filter(r => r.isNsfw).length,
+        processedFiles: processedCount,
+        nsfwFound: results.filter((r) => r.isNsfw).length,
         status: "completed",
         endTime: new Date(),
       });
 
       res.json({ session, results });
     } catch (error) {
+      console.error("Upload processing error:", error);
       res.status(500).json({ message: "Upload failed" });
     }
   });

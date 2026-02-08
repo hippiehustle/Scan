@@ -25,7 +25,17 @@ Color scheme preference: Charcoal gray background with darker matte cyan (#029fa
 - **Language**: TypeScript with ES modules
 - **API Design**: RESTful API with JSON responses
 - **File Handling**: Multer for multipart/form-data processing (50MB limit)
+- **NSFW Detection**: NSFWJS with TensorFlow.js (MobileNetV2Mid model, ~93% accuracy)
 - **Development**: Hot reloading with Vite middleware integration
+
+### NSFW Detection Engine
+- **Library**: NSFWJS v4.2.1 with @tensorflow/tfjs-node
+- **Model**: MobileNetV2Mid (balanced accuracy/performance)
+- **Categories**: Classifies images into Porn, Hentai, Sexy, Drawing, Neutral
+- **Category Mapping**: Porn → explicit, Hentai → adult, Sexy → suggestive, Drawing/Neutral → safe
+- **Confidence Threshold**: Configurable per scan session (default 0.7)
+- **Memory Management**: Proper tensor disposal to prevent memory leaks
+- **Error Handling**: Graceful fallback for unsupported file types
 
 ### Database Architecture
 - **Database**: PostgreSQL
