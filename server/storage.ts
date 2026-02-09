@@ -88,7 +88,7 @@ export class MemStorage implements IStorage {
       scanType: insertSession.scanType || "full",
       targetFolders: insertSession.targetFolders || [],
       fileTypes: insertSession.fileTypes || ["image", "video", "document"],
-      confidenceThreshold: insertSession.confidenceThreshold || 0.7,
+      confidenceThreshold: insertSession.confidenceThreshold || 0.3,
       autoActions: insertSession.autoActions || [],
       customSettings: insertSession.customSettings || null,
     };

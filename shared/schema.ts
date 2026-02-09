@@ -20,7 +20,7 @@ export const scanSessions = pgTable("scan_sessions", {
   scanType: text("scan_type").notNull().default("full"), // 'full', 'quick', 'custom', 'scheduled'
   targetFolders: text("target_folders").array().default([]),
   fileTypes: text("file_types").array().default(["image", "video", "document"]),
-  confidenceThreshold: real("confidence_threshold").default(0.7),
+  confidenceThreshold: real("confidence_threshold").default(0.3),
   autoActions: text("auto_actions").array().default([]), // 'move', 'rename', 'backup', 'delete'
   customSettings: text("custom_settings"), // JSON string for additional settings
 });

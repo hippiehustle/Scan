@@ -62,7 +62,7 @@ function mapToFlagCategory(className: string): string | null {
 
 export async function classifyImage(
   imageBuffer: Buffer,
-  confidenceThreshold: number = 0.7
+  confidenceThreshold: number = 0.3
 ): Promise<NsfwPrediction> {
   const nsfwModel = await loadModel();
 
@@ -72,9 +72,15 @@ export async function classifyImage(
 
     const predictions = await nsfwModel.classify(imageTensor);
 
+    console.log("NSFW predictions:", predictions.map((p: any) => `${p.className}: ${(p.probability * 100).toFixed(1)}%`).join(", "));
+
     const nsfwCategories = ["Porn", "Hentai", "Sexy"];
     const nsfwPredictions = predictions.filter((p: any) =>
       nsfwCategories.includes(p.className)
+    );
+
+    const combinedNsfwScore = nsfwPredictions.reduce(
+      (sum: number, p: any) => sum + p.probability, 0
     );
 
     const highestNsfw = nsfwPredictions.reduce(
@@ -82,12 +88,15 @@ export async function classifyImage(
       { className: "Neutral", probability: 0 }
     );
 
-    const isNsfw = highestNsfw.probability >= confidenceThreshold;
+    const isNsfw = combinedNsfwScore >= confidenceThreshold;
     const flagCategory = isNsfw ? mapToFlagCategory(highestNsfw.className) : null;
+    const confidence = Math.max(combinedNsfwScore, highestNsfw.probability);
+
+    console.log(`Combined NSFW score: ${(combinedNsfwScore * 100).toFixed(1)}%, threshold: ${(confidenceThreshold * 100).toFixed(1)}%, flagged: ${isNsfw}`);
 
     return {
       isNsfw,
-      confidence: highestNsfw.probability,
+      confidence,
       flagCategory,
       supported: true,
       predictions: predictions.map((p: any) => ({
