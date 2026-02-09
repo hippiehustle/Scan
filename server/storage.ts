@@ -11,9 +11,11 @@ export interface IStorage {
   getScanSession(id: number): Promise<ScanSession | undefined>;
   updateScanSession(id: number, updates: Partial<ScanSession>): Promise<ScanSession | undefined>;
   getActiveScanSessions(): Promise<ScanSession[]>;
+  getAllScanSessions(): Promise<ScanSession[]>;
   
   createScanResult(result: InsertScanResult): Promise<ScanResult>;
   getScanResults(sessionId: number): Promise<ScanResult[]>;
+  getAllResults(): Promise<ScanResult[]>;
   getNsfwResults(sessionId?: number): Promise<ScanResult[]>;
   updateScanResult(id: number, updates: Partial<ScanResult>): Promise<ScanResult | undefined>;
   
@@ -28,6 +30,14 @@ export interface IStorage {
     renamed: number;
     organized: ScanResult[];
   }>;
+
+  organizeAllNsfwFiles(): Promise<{
+    moved: number;
+    renamed: number;
+    organized: ScanResult[];
+  }>;
+
+  clearScanHistory(): Promise<{ deleted: number }>;
 }
 
 export class MemStorage implements IStorage {
@@ -103,6 +113,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.scanSessions.values()).filter(s => s.status === "active");
   }
 
+  async getAllScanSessions(): Promise<ScanSession[]> {
+    return Array.from(this.scanSessions.values());
+  }
+
   async createScanResult(insertResult: InsertScanResult): Promise<ScanResult> {
     const id = this.currentResultId++;
     const result: ScanResult = {
@@ -126,6 +140,10 @@ export class MemStorage implements IStorage {
 
   async getScanResults(sessionId: number): Promise<ScanResult[]> {
     return Array.from(this.scanResults.values()).filter(r => r.sessionId === sessionId);
+  }
+
+  async getAllResults(): Promise<ScanResult[]> {
+    return Array.from(this.scanResults.values());
   }
 
   async getNsfwResults(sessionId?: number): Promise<ScanResult[]> {
@@ -168,7 +186,6 @@ export class MemStorage implements IStorage {
     let renamed = 0;
 
     for (const result of sessionResults) {
-      // Simulate file organization
       const category = result.flagCategory || "flagged";
       const timestamp = new Date().toISOString().slice(0, 10);
       const extension = result.filename.split('.').pop();
@@ -189,11 +206,47 @@ export class MemStorage implements IStorage {
       }
     }
 
-    return {
-      moved,
-      renamed,
-      organized
-    };
+    return { moved, renamed, organized };
+  }
+
+  async organizeAllNsfwFiles(): Promise<{ moved: number; renamed: number; organized: ScanResult[] }> {
+    const nsfwResults = Array.from(this.scanResults.values()).filter(r => 
+      r.isNsfw && r.actionTaken === "none"
+    );
+    
+    const organized: ScanResult[] = [];
+    let moved = 0;
+    let renamed = 0;
+
+    for (const result of nsfwResults) {
+      const category = result.flagCategory || "flagged";
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const extension = result.filename.split('.').pop();
+      const newFilename = `${category}_${timestamp}_${result.id}.${extension}`;
+      const newPath = `/SecureScanner/${category}/${newFilename}`;
+      
+      const updatedResult = await this.updateScanResult(result.id, {
+        originalPath: result.filepath,
+        newPath: newPath,
+        filename: newFilename,
+        actionTaken: "moved"
+      });
+      
+      if (updatedResult) {
+        organized.push(updatedResult);
+        moved++;
+        renamed++;
+      }
+    }
+
+    return { moved, renamed, organized };
+  }
+
+  async clearScanHistory(): Promise<{ deleted: number }> {
+    const count = this.scanResults.size + this.scanSessions.size;
+    this.scanResults.clear();
+    this.scanSessions.clear();
+    return { deleted: count };
   }
 }
 
@@ -242,6 +295,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(scanSessions).where(eq(scanSessions.status, "active"));
   }
 
+  async getAllScanSessions(): Promise<ScanSession[]> {
+    return await db.select().from(scanSessions).orderBy(desc(scanSessions.startTime));
+  }
+
   async createScanResult(insertResult: InsertScanResult): Promise<ScanResult> {
     const [result] = await db
       .insert(scanResults)
@@ -252,6 +309,10 @@ export class DatabaseStorage implements IStorage {
 
   async getScanResults(sessionId: number): Promise<ScanResult[]> {
     return await db.select().from(scanResults).where(eq(scanResults.sessionId, sessionId));
+  }
+
+  async getAllResults(): Promise<ScanResult[]> {
+    return await db.select().from(scanResults).orderBy(desc(scanResults.createdAt));
   }
 
   async getNsfwResults(sessionId?: number): Promise<ScanResult[]> {
@@ -341,6 +402,52 @@ export class DatabaseStorage implements IStorage {
       renamed,
       organized
     };
+  }
+
+  async organizeAllNsfwFiles(): Promise<{ moved: number; renamed: number; organized: ScanResult[] }> {
+    const nsfwResults = await db
+      .select()
+      .from(scanResults)
+      .where(
+        and(
+          eq(scanResults.isNsfw, true),
+          eq(scanResults.actionTaken, "none")
+        )
+      );
+    
+    const organized: ScanResult[] = [];
+    let moved = 0;
+    let renamed = 0;
+
+    for (const result of nsfwResults) {
+      const category = result.flagCategory || "flagged";
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const extension = result.filename.split('.').pop();
+      const newFilename = `${category}_${timestamp}_${result.id}.${extension}`;
+      const newPath = `/SecureScanner/${category}/${newFilename}`;
+      
+      const updatedResult = await this.updateScanResult(result.id, {
+        originalPath: result.filepath,
+        newPath: newPath,
+        filename: newFilename,
+        actionTaken: "moved"
+      });
+      
+      if (updatedResult) {
+        organized.push(updatedResult);
+        moved++;
+        renamed++;
+      }
+    }
+
+    return { moved, renamed, organized };
+  }
+
+  async clearScanHistory(): Promise<{ deleted: number }> {
+    const [resultCount] = await db.select({ count: count() }).from(scanResults);
+    await db.delete(scanResults);
+    await db.delete(scanSessions);
+    return { deleted: resultCount?.count || 0 };
   }
 }
 
