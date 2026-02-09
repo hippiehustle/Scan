@@ -39,7 +39,7 @@ export default function ScanConfig() {
   const [targetFolders, setTargetFolders] = useState<string[]>([]);
   const [newFolder, setNewFolder] = useState("");
   const [fileTypes, setFileTypes] = useState(["image", "video", "document"]);
-  const [confidenceThreshold, setConfidenceThreshold] = useState([70]);
+  const [confidenceThreshold, setConfidenceThreshold] = useState([30]);
   const [autoActions, setAutoActions] = useState<string[]>([]);
   
   // App Customization State

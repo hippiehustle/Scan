@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             prediction = await classifyImage(
               file.buffer,
-              session.confidenceThreshold ?? 0.7
+              session.confidenceThreshold ?? 0.3
             );
           } catch (classifyError) {
             console.error(
