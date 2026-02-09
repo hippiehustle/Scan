@@ -30,12 +30,14 @@ Color scheme preference: Charcoal gray background with darker matte cyan (#029fa
 
 ### NSFW Detection Engine
 - **Library**: NSFWJS v4.2.1 with @tensorflow/tfjs-node
-- **Model**: MobileNetV2Mid (balanced accuracy/performance)
+- **Model**: InceptionV3 (higher accuracy, 299x299 input, server-optimized)
 - **Categories**: Classifies images into Porn, Hentai, Sexy, Drawing, Neutral
 - **Category Mapping**: Porn → explicit, Hentai → adult, Sexy → suggestive, Drawing/Neutral → safe
-- **Confidence Threshold**: Configurable per scan session (default 0.7)
-- **Memory Management**: Proper tensor disposal to prevent memory leaks
-- **Error Handling**: Graceful fallback for unsupported file types
+- **Detection Strategy**: Multi-crop analysis (full image + center/top/bottom crops) with combined + weighted NSFW scoring
+- **Per-Category Thresholds**: Porn >= 15%, Hentai >= 15%, Sexy >= 25%, combined >= 30%, weighted >= 20%
+- **Confidence Threshold**: Configurable per scan session (default 0.3)
+- **Memory Management**: Proper tensor disposal with tracked tensor cleanup in finally blocks
+- **Error Handling**: Graceful fallback for unsupported file types, empty buffer detection, detailed logging
 
 ### Database Architecture
 - **Database**: PostgreSQL

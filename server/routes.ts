@@ -72,6 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const results = [];
       let processedCount = 0;
+      let failedCount = 0;
 
       for (const file of files) {
         const fileType = file.mimetype.startsWith("image/")
@@ -83,16 +84,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let prediction;
         if (isImageFile(file.mimetype)) {
           try {
-            prediction = await classifyImage(
-              file.buffer,
-              session.confidenceThreshold ?? 0.3
-            );
-          } catch (classifyError) {
+            if (!file.buffer || file.buffer.length === 0) {
+              console.error(`Empty buffer for ${file.originalname}`);
+              prediction = getUnsupportedResult();
+              failedCount++;
+            } else {
+              console.log(`Scanning ${file.originalname} (${(file.buffer.length / 1024).toFixed(1)}KB, ${file.mimetype})`);
+              prediction = await classifyImage(
+                file.buffer,
+                session.confidenceThreshold ?? 0.3
+              );
+            }
+          } catch (classifyError: any) {
             console.error(
               `Failed to classify ${file.originalname}:`,
-              classifyError
+              classifyError?.message || classifyError
             );
             prediction = getUnsupportedResult();
+            failedCount++;
           }
         } else {
           prediction = getUnsupportedResult();
@@ -116,18 +125,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         processedCount++;
       }
 
+      const nsfwCount = results.filter((r) => r.isNsfw).length;
+
       await storage.updateScanSession(session.id, {
         totalFiles: files.length,
         processedFiles: processedCount,
-        nsfwFound: results.filter((r) => r.isNsfw).length,
+        nsfwFound: nsfwCount,
         status: "completed",
         endTime: new Date(),
       });
 
-      res.json({ session, results });
-    } catch (error) {
-      console.error("Upload processing error:", error);
-      res.status(500).json({ message: "Upload failed" });
+      console.log(`Scan complete: ${files.length} files, ${nsfwCount} NSFW detected, ${failedCount} failed`);
+
+      const updatedSession = await storage.getScanSession(session.id);
+      res.json({ session: updatedSession || session, results });
+    } catch (error: any) {
+      console.error("Upload processing error:", error?.message || error);
+      res.status(500).json({ message: "Upload failed: " + (error?.message || "Unknown error") });
     }
   });
 

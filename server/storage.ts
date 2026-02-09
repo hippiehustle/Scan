@@ -172,7 +172,7 @@ export class MemStorage implements IStorage {
     return {
       totalFiles,
       nsfwFound,
-      processed: totalFiles > 0 ? Math.round((processed / totalFiles) * 100) : 0,
+      processed,
     };
   }
 
