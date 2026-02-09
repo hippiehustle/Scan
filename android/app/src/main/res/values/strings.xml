@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SecureScanner</string>
+    <string name="title_activity_main">SecureScanner</string>
+    <string name="package_name">com.securescanner.app</string>
+    <string name="custom_url_scheme">com.securescanner.app</string>
+</resources>
