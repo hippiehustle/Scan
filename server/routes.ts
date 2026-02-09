@@ -173,6 +173,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/organize-all", async (req, res) => {
+    try {
+      const result = await storage.organizeAllNsfwFiles();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to organize files" });
+    }
+  });
+
+  app.delete("/api/scan-history", async (req, res) => {
+    try {
+      const result = await storage.clearScanHistory();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to clear scan history" });
+    }
+  });
+
+  app.get("/api/scan-sessions", async (req, res) => {
+    try {
+      const sessions = await storage.getAllScanSessions();
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  app.get("/api/scan-results", async (req, res) => {
+    try {
+      const results = await storage.getAllResults();
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch results" });
+    }
+  });
+
   // Export functionality
   app.get("/api/export/report", async (req, res) => {
     try {

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 export default function QuickStats() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<{ totalFiles: number; nsfwFound: number; processed: number }>({
     queryKey: ["/api/stats"],
   });
 

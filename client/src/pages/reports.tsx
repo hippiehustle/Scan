@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Download, FileText, TrendingUp, AlertTriangle } from "lucide-react";
 
 export default function Reports() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<{ totalFiles: number; nsfwFound: number; processed: number }>({
     queryKey: ["/api/stats"],
   });
 
