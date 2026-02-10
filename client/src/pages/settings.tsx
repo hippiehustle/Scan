@@ -253,16 +253,41 @@ export default function Settings() {
           <p className="text-xs text-gray-400">
             Install SecureScanner as a native Android app for the best experience.
           </p>
-          <a
-            href="/api/download-apk"
-            download="SecureScanner.apk"
-            className="inline-flex items-center justify-start w-full px-4 py-2 rounded-md text-sm font-medium bg-matte-cyan/20 hover:bg-matte-cyan/30 text-matte-cyan border border-matte-cyan/30 transition-colors"
+          <Button
+            variant="outline"
+            className="w-full bg-matte-cyan/20 hover:bg-matte-cyan/30 text-matte-cyan border border-matte-cyan/30"
+            onClick={async (e) => {
+              e.preventDefault();
+              try {
+                const res = await fetch("/api/download-apk", { method: "HEAD" });
+                if (res.ok) {
+                  const a = document.createElement("a");
+                  a.href = "/api/download-apk";
+                  a.download = "SecureScanner.apk";
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                } else {
+                  toast({
+                    title: "APK Not Available",
+                    description: "The Android APK hasn't been built yet. You can install this app as a PWA instead — tap 'Add to Home Screen' in your browser menu.",
+                    variant: "destructive",
+                  });
+                }
+              } catch {
+                toast({
+                  title: "Download Failed",
+                  description: "Could not reach the server. Try installing as a PWA from your browser menu instead.",
+                  variant: "destructive",
+                });
+              }
+            }}
           >
             <Download className="w-4 h-4 mr-2" />
             Download Android APK
-          </a>
+          </Button>
           <p className="text-xs text-gray-500">
-            After downloading, open the file on your Android device. You may need to allow installation from unknown sources in your device settings.
+            After downloading, open the file on your Android device. You may need to allow installation from unknown sources in your device settings. You can also install this app as a PWA from your browser menu.
           </p>
         </CardContent>
       </Card>
