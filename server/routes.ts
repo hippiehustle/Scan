@@ -254,6 +254,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/download-apk", (req, res) => {
+    const path = require("path");
+    const fs = require("fs");
+    const apkPath = path.join(process.cwd(), "SecureScanner.apk");
+    if (!fs.existsSync(apkPath)) {
+      return res.status(404).json({ message: "APK not found" });
+    }
+    res.setHeader("Content-Type", "application/vnd.android.package-archive");
+    res.setHeader("Content-Disposition", 'attachment; filename="SecureScanner.apk"');
+    res.setHeader("Content-Length", fs.statSync(apkPath).size);
+    const stream = fs.createReadStream(apkPath);
+    stream.pipe(res);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

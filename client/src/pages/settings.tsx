@@ -10,7 +10,8 @@ import {
   Download,
   Trash2,
   Info,
-  Check
+  Check,
+  Smartphone
 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -244,6 +245,31 @@ export default function Settings() {
       <Card className="bg-charcoal-800/60 backdrop-blur-sm border border-charcoal-700">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-100 flex items-center space-x-2">
+            <Smartphone className="w-5 h-5" />
+            <span>Android App</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-gray-400">
+            Install SecureScanner as a native Android app for the best experience.
+          </p>
+          <a
+            href="/api/download-apk"
+            download="SecureScanner.apk"
+            className="inline-flex items-center justify-start w-full px-4 py-2 rounded-md text-sm font-medium bg-matte-cyan/20 hover:bg-matte-cyan/30 text-matte-cyan border border-matte-cyan/30 transition-colors"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Android APK
+          </a>
+          <p className="text-xs text-gray-500">
+            After downloading, open the file on your Android device. You may need to allow installation from unknown sources in your device settings.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-charcoal-800/60 backdrop-blur-sm border border-charcoal-700">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-100 flex items-center space-x-2">
             <Info className="w-5 h-5" />
             <span>About</span>
           </CardTitle>
@@ -256,7 +282,7 @@ export default function Settings() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Detection Model</span>
-              <span className="text-gray-200">MobileNetV2Mid</span>
+              <span className="text-gray-200">InceptionV3</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Accuracy</span>
