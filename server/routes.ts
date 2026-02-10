@@ -202,6 +202,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/organize-custom", async (req, res) => {
+    try {
+      const { destinationFolder, mode, filterCategories, filterFileTypes, sessionId } = req.body;
+      if (!destinationFolder || !mode) {
+        return res.status(400).json({ message: "destinationFolder and mode are required" });
+      }
+      const result = await storage.organizeWithOptions({
+        destinationFolder,
+        mode,
+        filterCategories,
+        filterFileTypes,
+        sessionId: sessionId ? parseInt(sessionId) : undefined,
+      });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to organize files" });
+    }
+  });
+
   app.delete("/api/scan-history", async (req, res) => {
     try {
       const result = await storage.clearScanHistory();

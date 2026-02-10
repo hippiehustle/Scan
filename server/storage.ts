@@ -2,6 +2,14 @@ import { users, scanSessions, scanResults, type User, type InsertUser, type Scan
 import { db } from "./db";
 import { eq, and, count, sum, desc } from "drizzle-orm";
 
+export interface OrganizeOptions {
+  destinationFolder: string;
+  mode: "category" | "date" | "filetype" | "custom";
+  filterCategories?: string[];
+  filterFileTypes?: string[];
+  sessionId?: number;
+}
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -32,6 +40,12 @@ export interface IStorage {
   }>;
 
   organizeAllNsfwFiles(): Promise<{
+    moved: number;
+    renamed: number;
+    organized: ScanResult[];
+  }>;
+
+  organizeWithOptions(options: OrganizeOptions): Promise<{
     moved: number;
     renamed: number;
     organized: ScanResult[];
@@ -242,12 +256,115 @@ export class MemStorage implements IStorage {
     return { moved, renamed, organized };
   }
 
+  async organizeWithOptions(options: OrganizeOptions): Promise<{ moved: number; renamed: number; organized: ScanResult[] }> {
+    let results = Array.from(this.scanResults.values()).filter(r =>
+      r.isNsfw && r.actionTaken === "none"
+    );
+
+    if (options.sessionId) {
+      results = results.filter(r => r.sessionId === options.sessionId);
+    }
+    if (options.filterCategories && options.filterCategories.length > 0) {
+      results = results.filter(r => r.flagCategory && options.filterCategories!.includes(r.flagCategory));
+    }
+    if (options.filterFileTypes && options.filterFileTypes.length > 0) {
+      results = results.filter(r => options.filterFileTypes!.includes(r.fileType));
+    }
+
+    const organized: ScanResult[] = [];
+    let moved = 0;
+    let renamed = 0;
+
+    for (const result of results) {
+      const subfolder = getSubfolder(result, options.mode);
+      const extension = result.filename.split('.').pop() || 'bin';
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const newFilename = `${(result.flagCategory || 'flagged')}_${timestamp}_${result.id}.${extension}`;
+      const newPath = `${options.destinationFolder}/${subfolder}/${newFilename}`;
+
+      const updatedResult = await this.updateScanResult(result.id, {
+        originalPath: result.filepath,
+        newPath,
+        filename: newFilename,
+        actionTaken: "moved"
+      });
+
+      if (updatedResult) {
+        organized.push(updatedResult);
+        moved++;
+        renamed++;
+      }
+    }
+
+    return { moved, renamed, organized };
+  }
+
   async clearScanHistory(): Promise<{ deleted: number }> {
     const count = this.scanResults.size + this.scanSessions.size;
     this.scanResults.clear();
     this.scanSessions.clear();
     return { deleted: count };
   }
+}
+
+function getSubfolder(result: ScanResult, mode: OrganizeOptions["mode"]): string {
+  switch (mode) {
+    case "category":
+      return result.flagCategory || "flagged";
+    case "date": {
+      const dateStr = extractDateFromFilename(result.filename) || extractDateFromTimestamp(result.createdAt);
+      return dateStr || "Undetermined";
+    }
+    case "filetype":
+      return getFileTypeGroup(result.fileType, result.filename);
+    case "custom":
+    default:
+      return result.flagCategory || "flagged";
+  }
+}
+
+function extractDateFromFilename(filename: string): string | null {
+  const patterns = [
+    /(\d{4})-(\d{2})-(\d{2})/,
+    /(\d{4})(\d{2})(\d{2})/,
+    /(\d{2})-(\d{2})-(\d{4})/,
+    /(\d{2})\.(\d{2})\.(\d{4})/,
+  ];
+  for (const pattern of patterns) {
+    const match = filename.match(pattern);
+    if (match) {
+      if (match[3] && match[3].length === 4) {
+        return `${match[3]}-${match[2]}-${match[1]}`;
+      }
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+  }
+  return null;
+}
+
+function extractDateFromTimestamp(ts: Date | string | null): string | null {
+  if (!ts) return null;
+  try {
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return null;
+  }
+}
+
+function getFileTypeGroup(fileType: string, filename: string): string {
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'tiff', 'ico', 'heic', 'heif', 'avif'];
+  const videoExts = ['mp4', 'avi', 'mov', 'mkv', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'mpeg', 'mpg'];
+  const textExts = ['txt', 'doc', 'docx', 'pdf', 'rtf', 'odt', 'md', 'csv', 'xls', 'xlsx', 'ppt', 'pptx'];
+  const archiveExts = ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso', 'dmg'];
+
+  if (fileType === 'image' || imageExts.includes(ext)) return 'Images';
+  if (fileType === 'video' || videoExts.includes(ext)) return 'Videos';
+  if (fileType === 'document' || textExts.includes(ext)) return 'Documents';
+  if (archiveExts.includes(ext)) return 'Archives';
+  return 'Other';
 }
 
 export class DatabaseStorage implements IStorage {
@@ -433,6 +550,56 @@ export class DatabaseStorage implements IStorage {
         actionTaken: "moved"
       });
       
+      if (updatedResult) {
+        organized.push(updatedResult);
+        moved++;
+        renamed++;
+      }
+    }
+
+    return { moved, renamed, organized };
+  }
+
+  async organizeWithOptions(options: OrganizeOptions): Promise<{ moved: number; renamed: number; organized: ScanResult[] }> {
+    const conditions = [
+      eq(scanResults.isNsfw, true),
+      eq(scanResults.actionTaken, "none")
+    ];
+
+    if (options.sessionId) {
+      conditions.push(eq(scanResults.sessionId, options.sessionId));
+    }
+
+    let results = await db
+      .select()
+      .from(scanResults)
+      .where(and(...conditions));
+
+    if (options.filterCategories && options.filterCategories.length > 0) {
+      results = results.filter(r => r.flagCategory && options.filterCategories!.includes(r.flagCategory));
+    }
+    if (options.filterFileTypes && options.filterFileTypes.length > 0) {
+      results = results.filter(r => options.filterFileTypes!.includes(r.fileType));
+    }
+
+    const organized: ScanResult[] = [];
+    let moved = 0;
+    let renamed = 0;
+
+    for (const result of results) {
+      const subfolder = getSubfolder(result, options.mode);
+      const extension = result.filename.split('.').pop() || 'bin';
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const newFilename = `${(result.flagCategory || 'flagged')}_${timestamp}_${result.id}.${extension}`;
+      const newPath = `${options.destinationFolder}/${subfolder}/${newFilename}`;
+
+      const updatedResult = await this.updateScanResult(result.id, {
+        originalPath: result.filepath,
+        newPath,
+        filename: newFilename,
+        actionTaken: "moved"
+      });
+
       if (updatedResult) {
         organized.push(updatedResult);
         moved++;
