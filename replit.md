@@ -123,7 +123,33 @@ The application uses three main entities:
 3. **Database**: Drizzle migrations applied via `db:push` command
 4. **Environment**: Requires `DATABASE_URL` environment variable
 
-### Recent Major Enhancements (January 2025)
+### Recent Major Enhancements (February 2026)
+
+**Secret Admin Panel**: Hidden admin page accessible via Easter egg (7 taps on Kaos Forge logo on About page):
+- Premium feature unlocks (deep scan, auto-organize, secure backup, advanced reports)
+- SentiSight.ai cloud detection toggle (enable/disable)
+- Bug Report and Feature Request tab visibility controls
+- System stats overview dashboard
+- Admin lock/unlock functionality
+
+**SentiSight.ai API Integration**: Cloud-based NSFW detection alternative:
+- Endpoint: POST to SentiSight.ai NSFW-classification API
+- Maps safe/unsafe response to existing NsfwPrediction format
+- Robust response parsing with fallback for unknown formats
+- Server-side state persisted to `.sentisight-config.json`
+- Toggle via admin panel, syncs to server in real-time
+
+**About Page**: New informational page with:
+- App description, technology stack, privacy info, credits
+- Hidden Kaos Forge image Easter egg at bottom
+
+**Bug Report & Feature Request**: Two new pages:
+- Accessible via bottom navigation tabs (hidden by default)
+- Enabled/disabled from admin panel
+- Reports stored in localStorage
+- Full forms with severity/category/priority selection
+
+### Previous Enhancements (January 2025)
 
 **Enhanced Color System**: Implemented optimized charcoal gray and matte cyan (#029fad) color scheme with mathematically pleasing contrast ratios for improved visual accessibility and user preference alignment.
 

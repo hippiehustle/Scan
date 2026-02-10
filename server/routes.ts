@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertScanSessionSchema, insertScanResultSchema } from "@shared/schema";
 import multer from "multer";
 import { classifyImage, isImageFile, loadModel, getUnsupportedResult } from "./nsfw-model";
+import { classifyWithSentisight, isSentisightEnabled, setSentisightEnabled, checkSentisightAvailability } from "./sentisight";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -90,10 +91,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               failedCount++;
             } else {
               console.log(`Scanning ${file.originalname} (${(file.buffer.length / 1024).toFixed(1)}KB, ${file.mimetype})`);
-              prediction = await classifyImage(
-                file.buffer,
-                session.confidenceThreshold ?? 0.3
-              );
+              if (isSentisightEnabled()) {
+                console.log(`Using SentiSight.ai API for ${file.originalname}`);
+                prediction = await classifyWithSentisight(file.buffer);
+              } else {
+                prediction = await classifyImage(
+                  file.buffer,
+                  session.confidenceThreshold ?? 0.3
+                );
+              }
             }
           } catch (classifyError: any) {
             console.error(
@@ -251,6 +257,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(report);
     } catch (error) {
       res.status(500).json({ message: "Failed to generate report" });
+    }
+  });
+
+  app.get("/api/admin/sentisight-status", async (req, res) => {
+    try {
+      const available = await checkSentisightAvailability();
+      res.json({ sentisightAvailable: available, enabled: isSentisightEnabled() });
+    } catch (error) {
+      res.status(500).json({ sentisightAvailable: false, enabled: false });
+    }
+  });
+
+  app.post("/api/admin/sentisight-toggle", async (req, res) => {
+    try {
+      const { enabled } = req.body;
+      setSentisightEnabled(!!enabled);
+      res.json({ success: true, enabled: isSentisightEnabled() });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to toggle SentiSight" });
     }
   });
 

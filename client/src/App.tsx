@@ -11,6 +11,10 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import ScanConfig from "@/pages/scan-config";
 import ScanLanding from "@/pages/scan-landing";
+import About from "@/pages/about";
+import Admin from "@/pages/admin";
+import BugReport from "@/pages/bug-report";
+import FeatureRequest from "@/pages/feature-request";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import Header from "@/components/layout/header";
@@ -19,7 +23,7 @@ function Router() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-charcoal-900 via-charcoal-800 to-charcoal-900">
       <Header />
-      <main className="pb-20"> {/* Add padding for bottom navigation */}
+      <main className="pb-20">
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/files" component={Files} />
@@ -29,6 +33,10 @@ function Router() {
           <Route path="/scan/:sessionId">
             {(params) => <ScanLanding sessionId={params.sessionId} />}
           </Route>
+          <Route path="/about" component={About} />
+          <Route path="/admin" component={Admin} />
+          <Route path="/bug-report" component={BugReport} />
+          <Route path="/feature-request" component={FeatureRequest} />
           <Route component={NotFound} />
         </Switch>
       </main>
