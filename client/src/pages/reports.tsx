@@ -72,9 +72,14 @@ export default function Reports() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Processing Progress</span>
-              <span className="text-gray-300">{stats?.processed || 0}%</span>
+              <span className="text-gray-300">
+                {stats?.totalFiles ? Math.round(((stats.processed || 0) / stats.totalFiles) * 100) : 0}%
+              </span>
             </div>
-            <Progress value={stats?.processed || 0} className="h-2" />
+            <Progress
+              value={stats?.totalFiles ? Math.round(((stats.processed || 0) / stats.totalFiles) * 100) : 0}
+              className="h-2"
+            />
           </div>
         </CardContent>
       </Card>

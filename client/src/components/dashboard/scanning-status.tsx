@@ -18,13 +18,13 @@ export default function ScanningStatus() {
   const isScanning = !!activeSession;
 
   const progress = displaySession
-    ? Math.round((displaySession.processedFiles / Math.max(displaySession.totalFiles, 1)) * 100)
+    ? Math.round(((displaySession.processedFiles ?? 0) / Math.max(displaySession.totalFiles ?? 1, 1)) * 100)
     : 0;
 
   const statusText = isScanning
-    ? `Processing ${activeSession!.processedFiles}/${activeSession!.totalFiles} files`
+    ? `Processing ${activeSession!.processedFiles ?? 0}/${activeSession!.totalFiles ?? 0} files`
     : latestSession
-    ? `Last scan: ${latestSession.processedFiles} file${latestSession.processedFiles !== 1 ? "s" : ""} analyzed`
+    ? `Last scan: ${latestSession.processedFiles ?? 0} file${(latestSession.processedFiles ?? 0) !== 1 ? "s" : ""} analyzed`
     : "Ready to scan";
 
   return (
@@ -54,7 +54,7 @@ export default function ScanningStatus() {
             : "No scans yet"}
           </span>
           <span>
-            {displaySession && displaySession.nsfwFound > 0 
+            {displaySession && (displaySession.nsfwFound ?? 0) > 0 
               ? `${displaySession.nsfwFound} flagged` 
               : ""}
           </span>

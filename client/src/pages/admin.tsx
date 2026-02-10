@@ -37,10 +37,9 @@ export default function Admin() {
   }, [settings]);
 
   const { data: stats } = useQuery<{
-    totalScans: number;
     totalFiles: number;
-    nsfwDetected: number;
-    cleanFiles: number;
+    nsfwFound: number;
+    processed: number;
   }>({
     queryKey: ["/api/stats"],
   });
@@ -242,19 +241,19 @@ export default function Admin() {
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-charcoal-900/60 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-matte-cyan">{stats?.totalScans ?? 0}</p>
-              <p className="text-xs text-gray-400">Total Scans</p>
-            </div>
-            <div className="bg-charcoal-900/60 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-gray-200">{stats?.totalFiles ?? 0}</p>
+              <p className="text-2xl font-bold text-matte-cyan">{stats?.processed ?? 0}</p>
               <p className="text-xs text-gray-400">Files Processed</p>
             </div>
             <div className="bg-charcoal-900/60 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-red-400">{stats?.nsfwDetected ?? 0}</p>
+              <p className="text-2xl font-bold text-gray-200">{stats?.totalFiles ?? 0}</p>
+              <p className="text-xs text-gray-400">Total Files</p>
+            </div>
+            <div className="bg-charcoal-900/60 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-red-400">{stats?.nsfwFound ?? 0}</p>
               <p className="text-xs text-gray-400">NSFW Found</p>
             </div>
             <div className="bg-charcoal-900/60 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-green-400">{stats?.cleanFiles ?? 0}</p>
+              <p className="text-2xl font-bold text-green-400">{(stats?.totalFiles ?? 0) - (stats?.nsfwFound ?? 0)}</p>
               <p className="text-xs text-gray-400">Clean Files</p>
             </div>
           </div>
