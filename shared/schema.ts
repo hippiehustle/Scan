@@ -62,3 +62,5 @@ export type ScanSession = typeof scanSessions.$inferSelect;
 export type InsertScanSession = z.infer<typeof insertScanSessionSchema>;
 export type ScanResult = typeof scanResults.$inferSelect;
 export type InsertScanResult = z.infer<typeof insertScanResultSchema>;
+
+export * from "./models/auth";

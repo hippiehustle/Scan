@@ -5,6 +5,7 @@ import { insertScanSessionSchema, insertScanResultSchema } from "@shared/schema"
 import multer from "multer";
 import { classifyImage, isImageFile, loadModel, getUnsupportedResult } from "./nsfw-model";
 import { classifyWithSentisight, isSentisightEnabled, setSentisightEnabled, checkSentisightAvailability } from "./sentisight";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -12,6 +13,9 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
   // Scan Sessions
   app.post("/api/scan-sessions", async (req, res) => {
     try {

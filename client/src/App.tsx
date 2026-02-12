@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEffect } from "react";
 import { registerServiceWorker } from "@/lib/pwa";
+import { useAuth } from "@/hooks/use-auth";
+import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Files from "@/pages/files";
 import Reports from "@/pages/reports";
@@ -19,8 +21,9 @@ import FileOrganizer from "@/pages/file-organizer";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import Header from "@/components/layout/header";
+import { Loader2 } from "lucide-react";
 
-function Router() {
+function AuthenticatedRouter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-charcoal-900 via-charcoal-800 to-charcoal-900">
       <Header />
@@ -52,6 +55,27 @@ function Router() {
   );
 }
 
+function AppRouter() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-charcoal-900 via-charcoal-800 to-charcoal-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 text-matte-cyan animate-spin mx-auto" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  return <AuthenticatedRouter />;
+}
+
 function App() {
   useEffect(() => {
     registerServiceWorker();
@@ -61,7 +85,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <AppRouter />
       </TooltipProvider>
     </QueryClientProvider>
   );
