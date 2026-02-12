@@ -48,14 +48,26 @@ Color scheme preference: Charcoal gray background with darker matte cyan (#029fa
 ## Key Components
 
 ### Database Schema
-The application uses three main entities:
+The application uses these entities:
 
-1. **Users Table**
+1. **Users Table** (legacy, `users`)
    - `id` (serial primary key)
    - `username` (unique text)
    - `password` (text)
 
-2. **Scan Sessions Table**
+2. **Auth Users Table** (`auth_users` - Replit Auth)
+   - `id` (varchar primary key, UUID default)
+   - `email` (unique varchar)
+   - `firstName`, `lastName` (varchar)
+   - `profileImageUrl` (varchar)
+   - `createdAt`, `updatedAt` (timestamps)
+
+3. **Sessions Table** (`sessions` - Replit Auth)
+   - `sid` (varchar primary key)
+   - `sess` (jsonb)
+   - `expire` (timestamp)
+
+4. **Scan Sessions Table**
    - `id` (serial primary key)
    - `userId` (foreign key to users)
    - `startTime` and `endTime` (timestamps)
@@ -124,6 +136,20 @@ The application uses three main entities:
 4. **Environment**: Requires `DATABASE_URL` environment variable
 
 ### Recent Major Enhancements (February 2026)
+
+**Replit Auth Integration**: Full authentication system using Replit as OpenID Connect provider:
+- Supports Google, GitHub, X, Apple, and email/password login
+- Landing page shown for unauthenticated users with feature showcase
+- Authenticated users see dashboard with user profile dropdown in header
+- Auth schema uses separate `auth_users` table (varchar ID) to avoid conflict with legacy `users` table (serial ID)
+- Session management via PostgreSQL-backed session store
+- Auth module located at `server/replit_integrations/auth/`
+
+**Deployment Startup Fix**: Server now binds port immediately before async initialization:
+- `server.listen()` called synchronously in `server/index.ts` before route registration
+- ML model loading and auth setup happen asynchronously after port is open
+- Prevents deployment timeout caused by TensorFlow/NSFWJS model blocking port binding
+
 
 **Secret Admin Panel**: Hidden admin page accessible via Easter egg (7 taps on Kaos Forge logo on About page):
 - Premium feature unlocks (deep scan, auto-organize, secure backup, advanced reports)
