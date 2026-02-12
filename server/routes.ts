@@ -1,5 +1,4 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertScanSessionSchema, insertScanResultSchema } from "@shared/schema";
 import multer from "multer";
@@ -12,7 +11,7 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
   await setupAuth(app);
   registerAuthRoutes(app);
 
@@ -321,7 +320,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   app.head("/api/download-apk", handleApkDownload);
   app.get("/api/download-apk", handleApkDownload);
-
-  const httpServer = createServer(app);
-  return httpServer;
 }
