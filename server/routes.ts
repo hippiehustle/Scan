@@ -72,18 +72,38 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "No files uploaded" });
       }
 
-      const session = await storage.createScanSession({ userId: null });
+      let fileMetadataArray: Array<{ relativePath?: string; isProjectFile?: boolean }> = [];
+      if (req.body.metadata) {
+        try {
+          fileMetadataArray = JSON.parse(req.body.metadata);
+          if (!Array.isArray(fileMetadataArray)) fileMetadataArray = [];
+        } catch {
+          fileMetadataArray = [];
+        }
+      }
+
+      const isFolderScan = req.body.isFolderScan === "true";
+      const folderName = req.body.folderName || "";
+
+      const session = await storage.createScanSession({
+        userId: null,
+        scanType: isFolderScan ? "full" : "quick",
+        targetFolders: isFolderScan && folderName ? [folderName] : [],
+      });
 
       const results = [];
       let processedCount = 0;
       let failedCount = 0;
 
-      for (const file of files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         const fileType = file.mimetype.startsWith("image/")
           ? "image"
           : file.mimetype.startsWith("video/")
             ? "video"
             : "document";
+
+        const meta = fileMetadataArray[i] || {};
 
         let prediction;
         if (isImageFile(file.mimetype)) {
@@ -93,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               prediction = getUnsupportedResult();
               failedCount++;
             } else {
-              console.log(`Scanning ${file.originalname} (${(file.buffer.length / 1024).toFixed(1)}KB, ${file.mimetype})`);
+              console.log(`Scanning ${file.originalname} (${(file.buffer.length / 1024).toFixed(1)}KB, ${file.mimetype})${meta.isProjectFile ? " [PROJECT]" : ""}`);
               if (isSentisightEnabled()) {
                 console.log(`Using SentiSight.ai API for ${file.originalname}`);
                 prediction = await classifyWithSentisight(file.buffer);
@@ -116,6 +136,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           prediction = getUnsupportedResult();
         }
 
+        const relativePath = meta.relativePath || file.originalname;
         const result = await storage.createScanResult({
           sessionId: session.id,
           filename: file.originalname,
@@ -125,9 +146,11 @@ export async function registerRoutes(app: Express): Promise<void> {
           confidence: prediction.confidence,
           processed: prediction.supported,
           flagCategory: prediction.flagCategory,
-          originalPath: `/uploads/${file.originalname}`,
+          originalPath: relativePath,
           newPath: null,
           actionTaken: "none",
+          isProjectFile: meta.isProjectFile || false,
+          relativePath: relativePath,
         });
 
         results.push(result);
@@ -135,6 +158,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const nsfwCount = results.filter((r) => r.isNsfw).length;
+      const projectFileCount = results.filter((r) => r.isProjectFile).length;
 
       await storage.updateScanSession(session.id, {
         totalFiles: files.length,
@@ -144,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         endTime: new Date(),
       });
 
-      console.log(`Scan complete: ${files.length} files, ${nsfwCount} NSFW detected, ${failedCount} failed`);
+      console.log(`Scan complete: ${files.length} files, ${nsfwCount} NSFW detected, ${failedCount} failed, ${projectFileCount} project files`);
 
       const updatedSession = await storage.getScanSession(session.id);
       res.json({ session: updatedSession || session, results });

@@ -37,7 +37,9 @@ export const scanResults = pgTable("scan_results", {
   flagCategory: text("flag_category"), // 'explicit', 'suggestive', 'adult', 'violent', 'disturbing'
   originalPath: text("original_path"),
   newPath: text("new_path"),
-  actionTaken: text("action_taken"), // 'none', 'moved', 'renamed', 'backed_up', 'deleted'
+  actionTaken: text("action_taken"), // 'none', 'moved', 'renamed', 'backed_up', 'deleted', 'copied'
+  isProjectFile: boolean("is_project_file").default(false),
+  relativePath: text("relative_path"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

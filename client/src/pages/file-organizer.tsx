@@ -62,7 +62,7 @@ export default function FileOrganizer({ sessionId }: FileOrganizerProps) {
   const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([
     "image", "video", "document",
   ]);
-  const [organizeResult, setOrganizeResult] = useState<{ moved: number; renamed: number } | null>(null);
+  const [organizeResult, setOrganizeResult] = useState<{ moved: number; renamed: number; copied: number } | null>(null);
 
   const { data: nsfwResults = [] } = useQuery<ScanResult[]>({
     queryKey: sessionId ? ["/api/scan-results", sessionId] : ["/api/nsfw-results"],
@@ -71,6 +71,9 @@ export default function FileOrganizer({ sessionId }: FileOrganizerProps) {
   const flaggedFiles = sessionId
     ? nsfwResults.filter((r) => r.isNsfw && r.actionTaken === "none")
     : nsfwResults.filter((r) => r.actionTaken === "none");
+
+  const projectFiles = flaggedFiles.filter((r) => r.isProjectFile);
+  const regularFiles = flaggedFiles.filter((r) => !r.isProjectFile);
 
   const filteredCount = flaggedFiles.filter((r) => {
     const categoryMatch = selectedCategories.length === 0 || (r.flagCategory && selectedCategories.includes(r.flagCategory));
@@ -95,13 +98,15 @@ export default function FileOrganizer({ sessionId }: FileOrganizerProps) {
       return response.json();
     },
     onSuccess: (data) => {
-      setOrganizeResult({ moved: data.moved, renamed: data.renamed });
+      setOrganizeResult({ moved: data.moved, renamed: data.renamed, copied: data.copied || 0 });
       queryClient.invalidateQueries({ queryKey: ["/api/nsfw-results"] });
       queryClient.invalidateQueries({ queryKey: ["/api/scan-results"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      const parts = [`${data.moved} files moved`];
+      if (data.copied > 0) parts.push(`${data.copied} project files copied`);
       toast({
         title: "Files organized successfully",
-        description: `${data.moved} files moved and renamed.`,
+        description: parts.join(", ") + ".",
       });
     },
     onError: () => {
@@ -198,9 +203,21 @@ export default function FileOrganizer({ sessionId }: FileOrganizerProps) {
           Customize how flagged files are moved and sorted
         </p>
         {flaggedFiles.length > 0 && (
-          <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">
-            {flaggedFiles.length} flagged files pending
-          </Badge>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">
+              {flaggedFiles.length} flagged files pending
+            </Badge>
+            {projectFiles.length > 0 && (
+              <Badge className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                {projectFiles.length} from project folders (copy)
+              </Badge>
+            )}
+            {regularFiles.length > 0 && (
+              <Badge className="bg-matte-cyan-600/20 text-matte-cyan-400 border border-matte-cyan-500/30">
+                {regularFiles.length} regular files (move)
+              </Badge>
+            )}
+          </div>
         )}
       </div>
 
@@ -445,7 +462,7 @@ export default function FileOrganizer({ sessionId }: FileOrganizerProps) {
           <div className="flex items-center justify-center space-x-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
             <CheckCircle className="w-5 h-5 text-green-400" />
             <span className="text-sm text-green-400">
-              {organizeResult.moved} files organized successfully
+              {organizeResult.moved} files moved{organizeResult.copied > 0 ? `, ${organizeResult.copied} project files copied` : ""} successfully
             </span>
           </div>
         )}
@@ -483,7 +500,7 @@ export default function FileOrganizer({ sessionId }: FileOrganizerProps) {
         </div>
 
         <p className="text-center text-xs text-gray-500">
-          Files will be renamed with category prefix and moved to the selected destination
+          Regular files will be moved to the destination. Files from project folders will be copied to preserve project integrity.
         </p>
       </div>
     </div>

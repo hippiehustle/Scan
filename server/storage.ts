@@ -48,6 +48,7 @@ export interface IStorage {
   organizeWithOptions(options: OrganizeOptions): Promise<{
     moved: number;
     renamed: number;
+    copied: number;
     organized: ScanResult[];
   }>;
 
@@ -146,6 +147,8 @@ export class MemStorage implements IStorage {
       originalPath: insertResult.originalPath || null,
       newPath: insertResult.newPath || null,
       actionTaken: insertResult.actionTaken || "none",
+      isProjectFile: insertResult.isProjectFile || false,
+      relativePath: insertResult.relativePath || null,
       createdAt: new Date(),
     };
     this.scanResults.set(id, result);
@@ -256,7 +259,7 @@ export class MemStorage implements IStorage {
     return { moved, renamed, organized };
   }
 
-  async organizeWithOptions(options: OrganizeOptions): Promise<{ moved: number; renamed: number; organized: ScanResult[] }> {
+  async organizeWithOptions(options: OrganizeOptions): Promise<{ moved: number; renamed: number; copied: number; organized: ScanResult[] }> {
     let results = Array.from(this.scanResults.values()).filter(r =>
       r.isNsfw && r.actionTaken === "none"
     );
@@ -274,6 +277,7 @@ export class MemStorage implements IStorage {
     const organized: ScanResult[] = [];
     let moved = 0;
     let renamed = 0;
+    let copied = 0;
 
     for (const result of results) {
       const subfolder = getSubfolder(result, options.mode);
@@ -282,21 +286,27 @@ export class MemStorage implements IStorage {
       const newFilename = `${(result.flagCategory || 'flagged')}_${timestamp}_${result.id}.${extension}`;
       const newPath = `${options.destinationFolder}/${subfolder}/${newFilename}`;
 
+      const action = result.isProjectFile ? "copied" : "moved";
+
       const updatedResult = await this.updateScanResult(result.id, {
         originalPath: result.filepath,
         newPath,
         filename: newFilename,
-        actionTaken: "moved"
+        actionTaken: action
       });
 
       if (updatedResult) {
         organized.push(updatedResult);
-        moved++;
+        if (result.isProjectFile) {
+          copied++;
+        } else {
+          moved++;
+        }
         renamed++;
       }
     }
 
-    return { moved, renamed, organized };
+    return { moved, renamed, copied, organized };
   }
 
   async clearScanHistory(): Promise<{ deleted: number }> {
@@ -560,7 +570,7 @@ export class DatabaseStorage implements IStorage {
     return { moved, renamed, organized };
   }
 
-  async organizeWithOptions(options: OrganizeOptions): Promise<{ moved: number; renamed: number; organized: ScanResult[] }> {
+  async organizeWithOptions(options: OrganizeOptions): Promise<{ moved: number; renamed: number; copied: number; organized: ScanResult[] }> {
     const conditions = [
       eq(scanResults.isNsfw, true),
       eq(scanResults.actionTaken, "none")
@@ -585,6 +595,7 @@ export class DatabaseStorage implements IStorage {
     const organized: ScanResult[] = [];
     let moved = 0;
     let renamed = 0;
+    let copied = 0;
 
     for (const result of results) {
       const subfolder = getSubfolder(result, options.mode);
@@ -593,21 +604,27 @@ export class DatabaseStorage implements IStorage {
       const newFilename = `${(result.flagCategory || 'flagged')}_${timestamp}_${result.id}.${extension}`;
       const newPath = `${options.destinationFolder}/${subfolder}/${newFilename}`;
 
+      const action = result.isProjectFile ? "copied" : "moved";
+
       const updatedResult = await this.updateScanResult(result.id, {
         originalPath: result.filepath,
         newPath,
         filename: newFilename,
-        actionTaken: "moved"
+        actionTaken: action
       });
 
       if (updatedResult) {
         organized.push(updatedResult);
-        moved++;
+        if (result.isProjectFile) {
+          copied++;
+        } else {
+          moved++;
+        }
         renamed++;
       }
     }
 
-    return { moved, renamed, organized };
+    return { moved, renamed, copied, organized };
   }
 
   async clearScanHistory(): Promise<{ deleted: number }> {
