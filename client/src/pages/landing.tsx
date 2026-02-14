@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, ScanSearch, FolderLock, BarChart3, LogIn } from "lucide-react";
+import { ScanSearch, FolderLock, BarChart3, LogIn } from "lucide-react";
+import logoImage from "@/assets/images/logo.png";
 
 export default function Landing() {
   return (
@@ -8,9 +9,7 @@ export default function Landing() {
       <header className="bg-charcoal-800/80 backdrop-blur-sm border-b border-charcoal-700 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-matte-cyan-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
+            <img src={logoImage} alt="SecureScanner" className="w-8 h-8 rounded-lg" />
             <h1 className="text-lg font-semibold text-gray-100">SecureScanner</h1>
           </div>
           <a href="/api/login">
@@ -24,9 +23,7 @@ export default function Landing() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="max-w-2xl mx-auto text-center space-y-6">
-          <div className="w-16 h-16 bg-matte-cyan-600/20 rounded-2xl flex items-center justify-center mx-auto border border-matte-cyan/30">
-            <Shield className="w-8 h-8 text-matte-cyan" />
-          </div>
+          <img src={logoImage} alt="SecureScanner" className="w-20 h-20 rounded-2xl mx-auto shadow-lg shadow-matte-cyan/20" />
 
           <h2 className="text-3xl md:text-4xl font-bold text-gray-100 font-serif leading-tight">
             Keep Your Files Clean & Safe

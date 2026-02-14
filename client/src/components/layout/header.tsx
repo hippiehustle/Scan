@@ -1,4 +1,5 @@
-import { Shield, Settings, LogOut, User } from "lucide-react";
+import { Settings, LogOut, User } from "lucide-react";
+import logoImage from "@/assets/images/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
@@ -22,9 +23,7 @@ export default function Header() {
       <div className="max-w-md mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-matte-cyan-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
+            <img src={logoImage} alt="SecureScanner" className="w-8 h-8 rounded-lg" />
             <h1 className="text-lg font-semibold text-gray-100">SecureScanner</h1>
           </div>
           <div className="flex items-center space-x-2">
