@@ -1,4 +1,4 @@
-import { users, scanSessions, scanResults, type User, type InsertUser, type ScanSession, type InsertScanSession, type ScanResult, type InsertScanResult } from "@shared/schema";
+import { users, scanSessions, scanResults, osintScans, osintResults, type User, type InsertUser, type ScanSession, type InsertScanSession, type ScanResult, type InsertScanResult, type OsintScan, type InsertOsintScan, type OsintResult, type InsertOsintResult } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, sum, desc } from "drizzle-orm";
 
@@ -53,6 +53,14 @@ export interface IStorage {
   }>;
 
   clearScanHistory(): Promise<{ deleted: number }>;
+
+  createOsintScan(scan: InsertOsintScan): Promise<OsintScan>;
+  getOsintScan(id: number): Promise<OsintScan | undefined>;
+  updateOsintScan(id: number, updates: Partial<OsintScan>): Promise<OsintScan | undefined>;
+  getAllOsintScans(): Promise<OsintScan[]>;
+  createOsintResult(result: InsertOsintResult): Promise<OsintResult>;
+  getOsintResults(scanId: number): Promise<OsintResult[]>;
+  getOsintResultsByStatus(scanId: number, status: string): Promise<OsintResult[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -314,6 +322,28 @@ export class MemStorage implements IStorage {
     this.scanResults.clear();
     this.scanSessions.clear();
     return { deleted: count };
+  }
+
+  async createOsintScan(scan: InsertOsintScan): Promise<OsintScan> {
+    return {} as OsintScan;
+  }
+  async getOsintScan(id: number): Promise<OsintScan | undefined> {
+    return undefined;
+  }
+  async updateOsintScan(id: number, updates: Partial<OsintScan>): Promise<OsintScan | undefined> {
+    return undefined;
+  }
+  async getAllOsintScans(): Promise<OsintScan[]> {
+    return [];
+  }
+  async createOsintResult(result: InsertOsintResult): Promise<OsintResult> {
+    return {} as OsintResult;
+  }
+  async getOsintResults(scanId: number): Promise<OsintResult[]> {
+    return [];
+  }
+  async getOsintResultsByStatus(scanId: number, status: string): Promise<OsintResult[]> {
+    return [];
   }
 }
 
@@ -632,6 +662,40 @@ export class DatabaseStorage implements IStorage {
     await db.delete(scanResults);
     await db.delete(scanSessions);
     return { deleted: resultCount?.count || 0 };
+  }
+
+  async createOsintScan(scan: InsertOsintScan): Promise<OsintScan> {
+    const [result] = await db.insert(osintScans).values(scan).returning();
+    return result;
+  }
+
+  async getOsintScan(id: number): Promise<OsintScan | undefined> {
+    const [scan] = await db.select().from(osintScans).where(eq(osintScans.id, id));
+    return scan || undefined;
+  }
+
+  async updateOsintScan(id: number, updates: Partial<OsintScan>): Promise<OsintScan | undefined> {
+    const [scan] = await db.update(osintScans).set(updates).where(eq(osintScans.id, id)).returning();
+    return scan || undefined;
+  }
+
+  async getAllOsintScans(): Promise<OsintScan[]> {
+    return await db.select().from(osintScans).orderBy(desc(osintScans.startTime));
+  }
+
+  async createOsintResult(result: InsertOsintResult): Promise<OsintResult> {
+    const [r] = await db.insert(osintResults).values(result).returning();
+    return r;
+  }
+
+  async getOsintResults(scanId: number): Promise<OsintResult[]> {
+    return await db.select().from(osintResults).where(eq(osintResults.scanId, scanId));
+  }
+
+  async getOsintResultsByStatus(scanId: number, status: string): Promise<OsintResult[]> {
+    return await db.select().from(osintResults).where(
+      and(eq(osintResults.scanId, scanId), eq(osintResults.status, status))
+    );
   }
 }
 
