@@ -1,0 +1,25 @@
+appId: com.securescanner.app
+productName: SecureScanner
+directories:
+  buildResources: build
+  output: electron-dist
+files:
+  - dist/public/**/*
+  - electron/**/*
+extraMetadata:
+  main: electron/main.js
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: dist/public/logo.png
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  installerIcon: dist/public/logo.png
+  uninstallerIcon: dist/public/logo.png
+  installerHeaderIcon: dist/public/logo.png
+  deleteAppDataOnUninstall: false
+  shortcutName: SecureScanner
