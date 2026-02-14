@@ -18,6 +18,7 @@ import Admin from "@/pages/admin";
 import BugReport from "@/pages/bug-report";
 import FeatureRequest from "@/pages/feature-request";
 import FileOrganizer from "@/pages/file-organizer";
+import OsintLookup from "@/pages/osint-lookup";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import Header from "@/components/layout/header";
@@ -41,6 +42,7 @@ function AuthenticatedRouter() {
           <Route path="/admin" component={Admin} />
           <Route path="/bug-report" component={BugReport} />
           <Route path="/feature-request" component={FeatureRequest} />
+          <Route path="/osint" component={OsintLookup} />
           <Route path="/organize">
             {() => <FileOrganizer />}
           </Route>

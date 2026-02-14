@@ -137,6 +137,19 @@ The application uses these entities:
 
 ### Recent Major Enhancements (February 2026)
 
+**Maigret OSINT Username Lookup**: Server-side username investigation across 2665+ websites:
+- Bundled Maigret data.json with all site configurations (580KB processed)
+- Server-side probe service with batched concurrent checking (15 concurrent, 8s timeout)
+- Support for all check types: status_code, message, response_url, engine-based
+- NSFW site tagging (porn, dating, erotic, webcam, etc.) with filter support
+- 137 unique site categories including forum, photo, gaming, social, etc.
+- Database tables: `osint_scans` and `osint_results` for persistent storage
+- Frontend OSINT page with username search, tag filters, NSFW toggle, progress tracking
+- Scan history with ability to review previous lookups
+- Real-time progress polling during active scans
+- API endpoints: GET /api/osint/sites, GET /api/osint/sites/list, POST /api/osint/scan, GET /api/osint/scan/:id, GET /api/osint/scan/:id/results, POST /api/osint/scan/:id/cancel, GET /api/osint/scans
+- Files: server/osint/maigret-sites.json, server/osint/probe-service.ts, client/src/pages/osint-lookup.tsx
+
 **Replit Auth Integration**: Full authentication system using Replit as OpenID Connect provider:
 - Supports Google, GitHub, X, Apple, and email/password login
 - Landing page shown for unauthenticated users with feature showcase

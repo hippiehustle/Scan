@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Folder, BarChart3, Settings, Info, Bug, Lightbulb } from "lucide-react";
+import { Home, Folder, BarChart3, Settings, Info, Bug, Lightbulb, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { loadAdminSettings } from "@/lib/admin-store";
@@ -15,6 +15,7 @@ const allNavItems: NavItem[] = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/files", icon: Folder, label: "Files" },
   { path: "/reports", icon: BarChart3, label: "Reports" },
+  { path: "/osint", icon: Globe, label: "OSINT" },
   { path: "/bug-report", icon: Bug, label: "Bugs", adminKey: "bugReportVisible" },
   { path: "/feature-request", icon: Lightbulb, label: "Ideas", adminKey: "featureRequestVisible" },
   { path: "/about", icon: Info, label: "About" },

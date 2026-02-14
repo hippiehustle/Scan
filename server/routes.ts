@@ -5,6 +5,7 @@ import multer from "multer";
 import { classifyImage, isImageFile, loadModel, getUnsupportedResult } from "./nsfw-model";
 import { classifyWithSentisight, isSentisightEnabled, setSentisightEnabled, checkSentisightAvailability } from "./sentisight";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { loadSites, filterSites, getSiteStats, runProbe, type MaigretSite } from "./osint/probe-service";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -344,4 +345,173 @@ export async function registerRoutes(app: Express): Promise<void> {
   };
   app.head("/api/download-apk", handleApkDownload);
   app.get("/api/download-apk", handleApkDownload);
+
+  loadSites();
+
+  app.get("/api/osint/sites", (req, res) => {
+    try {
+      const stats = getSiteStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to load site data" });
+    }
+  });
+
+  app.get("/api/osint/sites/list", (req, res) => {
+    try {
+      const { tags, nsfwOnly, limit } = req.query;
+      const tagFilters = tags ? (tags as string).split(",") : [];
+      const isNsfwOnly = nsfwOnly === "true";
+      const siteLimit = limit ? parseInt(limit as string) : undefined;
+      const sites = filterSites(tagFilters, isNsfwOnly, siteLimit);
+      res.json(sites.map(s => ({
+        name: s.name,
+        urlMain: s.urlMain,
+        tags: s.tags,
+        alexaRank: s.alexaRank,
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to filter sites" });
+    }
+  });
+
+  const activeScans = new Map<number, { cancel: boolean }>();
+
+  app.post("/api/osint/scan", async (req, res) => {
+    try {
+      const { username, tagFilters = [], nsfwOnly = false, siteLimit } = req.body;
+      if (!username || typeof username !== "string" || username.trim().length < 1) {
+        return res.status(400).json({ message: "Username is required" });
+      }
+
+      const sites = filterSites(tagFilters, nsfwOnly, siteLimit);
+      if (sites.length === 0) {
+        return res.status(400).json({ message: "No sites match the selected filters" });
+      }
+
+      const scan = await storage.createOsintScan({
+        username: username.trim(),
+        status: "active",
+        totalSites: sites.length,
+        checkedSites: 0,
+        foundCount: 0,
+        nsfwFoundCount: 0,
+        tagFilters: tagFilters,
+        endTime: null,
+      });
+
+      res.json(scan);
+
+      const scanControl = { cancel: false };
+      activeScans.set(scan.id, scanControl);
+
+      const BATCH_SIZE = 15;
+      let checked = 0;
+      let found = 0;
+      let nsfwFound = 0;
+
+      for (let i = 0; i < sites.length; i += BATCH_SIZE) {
+        if (scanControl.cancel) break;
+
+        const batch = sites.slice(i, i + BATCH_SIZE);
+        const results = await runProbe(username.trim(), batch);
+
+        for (const result of results) {
+          await storage.createOsintResult({
+            scanId: scan.id,
+            siteName: result.siteName,
+            siteUrl: result.siteUrl,
+            profileUrl: result.profileUrl,
+            status: result.status,
+            tags: result.tags,
+            isNsfw: result.isNsfw,
+            responseTime: result.responseTime,
+          });
+
+          checked++;
+          if (result.status === "found") {
+            found++;
+            if (result.isNsfw) nsfwFound++;
+          }
+        }
+
+        await storage.updateOsintScan(scan.id, {
+          checkedSites: checked,
+          foundCount: found,
+          nsfwFoundCount: nsfwFound,
+        });
+      }
+
+      await storage.updateOsintScan(scan.id, {
+        status: scanControl.cancel ? "cancelled" : "completed",
+        endTime: new Date(),
+        checkedSites: checked,
+        foundCount: found,
+        nsfwFoundCount: nsfwFound,
+      });
+
+      activeScans.delete(scan.id);
+    } catch (error: any) {
+      console.error("OSINT scan error:", error?.message || error);
+      try {
+        await storage.updateOsintScan(scan.id, {
+          status: "failed",
+          endTime: new Date(),
+        });
+        activeScans.delete(scan.id);
+      } catch {}
+    }
+  });
+
+  app.post("/api/osint/scan/:id/cancel", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const control = activeScans.get(id);
+      if (control) {
+        control.cancel = true;
+      }
+      await storage.updateOsintScan(id, { status: "cancelled", endTime: new Date() });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to cancel scan" });
+    }
+  });
+
+  app.get("/api/osint/scans", async (req, res) => {
+    try {
+      const scans = await storage.getAllOsintScans();
+      res.json(scans);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch scans" });
+    }
+  });
+
+  app.get("/api/osint/scan/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const scan = await storage.getOsintScan(id);
+      if (!scan) {
+        return res.status(404).json({ message: "Scan not found" });
+      }
+      res.json(scan);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch scan" });
+    }
+  });
+
+  app.get("/api/osint/scan/:id/results", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const statusFilter = req.query.status as string | undefined;
+      let results;
+      if (statusFilter) {
+        results = await storage.getOsintResultsByStatus(id, statusFilter);
+      } else {
+        results = await storage.getOsintResults(id);
+      }
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch results" });
+    }
+  });
 }

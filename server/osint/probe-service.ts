@@ -171,6 +171,20 @@ async function probeSite(
       };
     }
 
+    if (site.checkType.startsWith("engine_")) {
+      if (response.status === 200) {
+        const body = await response.text();
+        const usernameInPage = body.toLowerCase().includes(username.toLowerCase());
+        const is404Page = body.includes("404") || body.includes("not found") || body.includes("does not exist");
+        return {
+          ...base,
+          status: usernameInPage && !is404Page ? "found" : "not_found",
+          responseTime: elapsed,
+        };
+      }
+      return { ...base, status: "not_found", responseTime: elapsed };
+    }
+
     return {
       ...base,
       status: response.status >= 200 && response.status < 400 ? "found" : "not_found",
